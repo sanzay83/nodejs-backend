@@ -1,7 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const mysql = require("mysql2");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const morgan = require("morgan");
@@ -69,7 +68,7 @@ app.post("/vio/login", async (req, res) => {
   }
 });
 
-//app.use("/", postsRouter);
+app.use("/", postsRouter);
 //app.use("/", moreRouters);
 
 const PORT = process.env.PORT || 5000;
