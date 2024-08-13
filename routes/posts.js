@@ -72,13 +72,13 @@ router.get("/vio/posts/:id", async (req, res) => {
 // });
 
 router.post("/vio/posts/reaction", async (req, res) => {
-  const { postid, username, reaction } = req.body;
+  const { postid, user, postuser, reaction } = req.body;
   const newReaction = reaction + 1;
 
   try {
     const [rows] = await promisePool.execute(
       "SELECT * FROM reaction WHERE postid=? AND username=?",
-      [postid, username]
+      [postid, user]
     );
 
     if (rows.length > 0) {
@@ -86,11 +86,11 @@ router.post("/vio/posts/reaction", async (req, res) => {
     } else {
       await promisePool.execute(
         "INSERT INTO reaction (username, postid) VALUES (?, ?)",
-        [username, postid]
+        [user, postid]
       );
       await promisePool.execute(
         "UPDATE posts SET reaction=? WHERE username=? AND postid=?",
-        [newReaction, username, postid]
+        [newReaction, postuser, postid]
       );
       res.status(201).json({ message: "liked" });
     }
