@@ -71,4 +71,32 @@ router.get("/vio/posts/:id", async (req, res) => {
 //   });
 // });
 
+router.post("/vio/posts/reaction", async (req, res) => {
+  const { postid, username, reaction } = req.body;
+  const newReaction = reaction + 1;
+
+  try {
+    const [rows] = await promisePool.execute(
+      "SELECT * FROM reaction WHERE postid=? AND username=?",
+      [postid, username]
+    );
+
+    if (rows.length > 0) {
+      res.status(201).json({ message: "already liked" });
+    } else {
+      await promisePool.execute(
+        "INSERT INTO reaction (username, postid) VALUES (?, ?)",
+        [username, postid]
+      );
+      await promisePool.execute(
+        "UPDATE posts SET reaction=? WHERE username=? AND postid=?",
+        [newReaction, username, postid]
+      );
+      res.status(201).json({ message: "liked" });
+    }
+  } catch (err) {
+    res.status(500).json({ message: "Database error" });
+  }
+});
+
 module.exports = router;
