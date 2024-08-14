@@ -15,9 +15,22 @@ router.post("/vio/posts", async (req, res) => {
   }
 });
 
+// router.get("/vio/posts", async (req, res) => {
+//   try {
+//     const [rows] = await promisePool.execute("SELECT * FROM posts");
+//     res.json(rows);
+//   } catch (err) {
+//     res.status(500).json({ message: "Database error" });
+//   }
+// });
+
 router.get("/vio/posts", async (req, res) => {
+  const limit = req.query.limit;
+  const page = req.query.page * limit;
   try {
-    const [rows] = await promisePool.execute("SELECT * FROM posts");
+    const [rows] = await promisePool.execute(
+      `SELECT * FROM posts ORDER BY postid Desc LIMIT ${limit} OFFSET ${page}`
+    );
     res.json(rows);
   } catch (err) {
     res.status(500).json({ message: "Database error" });
@@ -43,6 +56,25 @@ router.get("/vio/posts/:id", async (req, res) => {
   }
 });
 
+router.post("/vio/posts/userpost", async (req, res) => {
+  const { username } = req.body;
+
+  try {
+    const [rows] = await promisePool.execute(
+      "SELECT * FROM posts WHERE username=?",
+      [username]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ message: "Database error" });
+  }
+});
+
 // router.put("/vio/posts/:id", (req, res) => {
 //   const postId = req.params.id;
 //   const { title, message } = req.body;
@@ -60,16 +92,16 @@ router.get("/vio/posts/:id", async (req, res) => {
 //   );
 // });
 
-// router.delete("/vio/posts/:id", (req, res) => {
-//   const postId = req.params.id;
+router.delete("/vio/posts/:id", async (req, res) => {
+  const postId = req.params.id;
 
-//   db.query("DELETE FROM posts WHERE id = ?", [postId], (err, result) => {
-//     if (err) return res.status(500).json({ message: "Database error" });
-//     if (result.affectedRows === 0)
-//       return res.status(404).json({ message: "Post not found" });
-//     res.status(204).send();
-//   });
-// });
+  try {
+    await promisePool.execute("DELETE FROM posts WHERE postid = ?", [postId]);
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ message: "Database error" });
+  }
+});
 
 router.post("/vio/posts/reaction", async (req, res) => {
   const { postid, user, postuser, reaction } = req.body;
