@@ -8,8 +8,8 @@ const postsRouter = require("./routes/posts");
 const promisePool = require("./db");
 
 //// Chat ////
-// const http = require("http");
-// const { Server } = require("socket.io");
+const http = require("http");
+const { Server } = require("socket.io");
 ////
 
 require("dotenv").config();
@@ -22,14 +22,24 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 /////Chat////
-// const server = http.createServer(app);
-// const io = new Server(server, {
-//   cors: {
-//     origin: "http://localhost:3000",
-//     methods: ["GET", "POST"]
-//   }
-// });
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+  },
+});
 ////////////
+
+// WebSocket Connection
+io.on("connection", (socket) => {
+  io.emit("user count", io.engine.clientsCount);
+  socket.on("chat message", (msg) => {
+    io.emit("chat message", msg);
+  });
+
+  socket.on("disconnect", () => {});
+});
 
 app.post("/vio/register", async (req, res) => {
   const { username, password } = req.body;
@@ -87,4 +97,4 @@ app.use("/", postsRouter);
 //app.use("/", moreRouters);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
