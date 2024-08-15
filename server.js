@@ -1,4 +1,5 @@
 const express = require("express");
+const fs = require("fs");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const bcrypt = require("bcryptjs");
@@ -7,39 +8,39 @@ const morgan = require("morgan");
 const postsRouter = require("./routes/posts");
 const promisePool = require("./db");
 
-//// Chat ////
 const http = require("http");
 const { Server } = require("socket.io");
-////
 
 require("dotenv").config();
 
 const app = express();
-app.use(cors());
+
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send("Something went wrong!");
+});
 
-/////Chat////
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:3000",
+const corsOptions = {
+  origin: "*",
+  credentials: true,
+  optionSuccessStatus: 200,
+};
+
+app.use(
+  cors({
+    origin: process.env.CLIENT_SERVER,
     methods: ["GET", "POST"],
-  },
-});
-////////////
+  })
+);
 
-// WebSocket Connection
-io.on("connection", (socket) => {
-  io.emit("user count", io.engine.clientsCount);
-  socket.on("chat message", (msg) => {
-    io.emit("chat message", msg);
-  });
-
-  socket.on("disconnect", () => {});
-});
+const sslOptions = {
+  key: fs.readFileSync(process.env.SSL_KEY_PATH),
+  cert: fs.readFileSync(process.env.SSL_CERT_PATH),
+};
 
 app.post("/vio/register", async (req, res) => {
   const { username, password } = req.body;
@@ -94,7 +95,25 @@ app.post("/vio/login", async (req, res) => {
 });
 
 app.use("/", postsRouter);
-//app.use("/", moreRouters);
+
+const server = http.createServer(sslOptions, app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_SERVER,
+    methods: ["GET", "POST"],
+  },
+});
+
+io.on("connection", (socket) => {
+  io.emit("user count", io.engine.clientsCount);
+  socket.on("chat message", (msg) => {
+    io.emit("chat message", msg);
+  });
+
+  socket.on("disconnect", () => {
+    io.emit("user count", io.engine.clientsCount);
+  });
+});
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

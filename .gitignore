@@ -5,7 +5,7 @@
 .env
 keygenerator.js
 package-lock.json
-
+/.key
 
 # testing
 /coverage

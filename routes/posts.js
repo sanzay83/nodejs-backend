@@ -15,21 +15,13 @@ router.post("/vio/posts", async (req, res) => {
   }
 });
 
-// router.get("/vio/posts", async (req, res) => {
-//   try {
-//     const [rows] = await promisePool.execute("SELECT * FROM posts");
-//     res.json(rows);
-//   } catch (err) {
-//     res.status(500).json({ message: "Database error" });
-//   }
-// });
-
 router.get("/vio/posts", async (req, res) => {
   const limit = req.query.limit;
   const page = req.query.page * limit;
   try {
     const [rows] = await promisePool.execute(
-      `SELECT * FROM posts ORDER BY postid Desc LIMIT ${limit} OFFSET ${page}`
+      `SELECT * FROM posts ORDER BY postid Desc LIMIT ? OFFSET ?`,
+      [limit, page]
     );
     res.json(rows);
   } catch (err) {
