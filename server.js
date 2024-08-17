@@ -19,28 +19,29 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send("Something went wrong!");
-});
-
-const corsOptions = {
-  origin: "*",
-  credentials: true,
-  optionSuccessStatus: 200,
-};
+const allowedOrigins = [
+  process.env.CLIENT_SERVER,
+  process.env.LOCAL_SERVER,
+  process.env.LOCAL_SERVER2,
+];
 
 app.use(
   cors({
-    origin: process.env.CLIENT_SERVER,
-    methods: ["GET", "POST"],
+    origin: function (origin, callback) {
+      if (allowedOrigins.includes(origin) || !origin) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
   })
 );
 
-const sslOptions = {
-  key: fs.readFileSync(process.env.SSL_KEY_PATH),
-  cert: fs.readFileSync(process.env.SSL_CERT_PATH),
-};
+const server = http.createServer(app);
+
+app.get("/test", (req, res) => {
+  res.status(201).json({ message: "Application is Running." });
+});
 
 app.post("/vio/register", async (req, res) => {
   const { username, password } = req.body;
@@ -96,10 +97,15 @@ app.post("/vio/login", async (req, res) => {
 
 app.use("/", postsRouter);
 
-const server = http.createServer(sslOptions, app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_SERVER,
+    origin: function (origin, callback) {
+      if (allowedOrigins.includes(origin) || !origin) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST"],
   },
 });
