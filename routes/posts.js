@@ -3,11 +3,11 @@ const router = express.Router();
 const promisePool = require("../db");
 
 router.post("/vio/posts", async (req, res) => {
-  const { username, title, datetime, message, reaction } = req.body;
+  const { username, title, datetime, message, reaction, type } = req.body;
   try {
     await promisePool.execute(
-      "INSERT INTO posts (username, title, datetime, message, reaction) VALUES (?, ?, ?, ?, ?)",
-      [username, title, datetime, message, reaction]
+      "INSERT INTO posts (username, title, datetime, message, reaction, type) VALUES (?, ?, ?, ?, ?, ?)",
+      [username, title, datetime, message, reaction, type]
     );
     res.status(201).json({ message: "Post added Successfully" });
   } catch (err) {
@@ -18,12 +18,44 @@ router.post("/vio/posts", async (req, res) => {
 router.get("/vio/posts", async (req, res) => {
   const limit = req.query.limit;
   const page = req.query.page * limit;
+  const postType = req.query.postType;
   try {
-    const [rows] = await promisePool.execute(
-      `SELECT * FROM posts ORDER BY postid Desc LIMIT ? OFFSET ?`,
-      [limit, page]
-    );
-    res.json(rows);
+    if (postType === "All" || postType === "") {
+      const [rows] = await promisePool.execute(
+        `SELECT * FROM posts ORDER BY postid Desc LIMIT ? OFFSET ?`,
+        [limit, page]
+      );
+      res.json(rows);
+    } else {
+      const [rows] = await promisePool.execute(
+        `SELECT * FROM posts WHERE Type=? ORDER BY postid Desc LIMIT ? OFFSET ?`,
+        [postType, limit, page]
+      );
+      res.json(rows);
+    }
+  } catch (err) {
+    res.status(500).json({ message: "Database error" });
+  }
+});
+
+router.get("/vio/posts/search", async (req, res) => {
+  const searchPost = `%${req.query.search}%`;
+  const postType = req.query.postType;
+
+  try {
+    if (postType === "All" || postType === "") {
+      const [rows] = await promisePool.execute(
+        "SELECT * FROM posts WHERE message LIKE ? ORDER BY postid DESC LIMIT 10",
+        [searchPost]
+      );
+      res.json(rows);
+    } else {
+      const [rows] = await promisePool.execute(
+        "SELECT * FROM posts WHERE message LIKE ? AND Type=? ORDER BY postid DESC LIMIT 10",
+        [searchPost, postType]
+      );
+      res.json(rows);
+    }
   } catch (err) {
     res.status(500).json({ message: "Database error" });
   }
