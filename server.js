@@ -37,6 +37,10 @@ app.use(
   })
 );
 
+app.use(express.static("public"));
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/public/index.html");
+});
 const server = http.createServer(app);
 
 app.get("/test", (req, res) => {
