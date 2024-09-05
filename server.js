@@ -21,6 +21,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 const allowedOrigins = [
   process.env.CLIENT_SERVER,
+  process.env.CLIENT_SERVER2,
   process.env.LOCAL_SERVER,
   process.env.LOCAL_SERVER2,
 ];
@@ -38,10 +39,12 @@ app.use(
 );
 
 app.use(express.static("public"));
+
+const server = http.createServer(app);
+
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/public/index.html");
 });
-const server = http.createServer(app);
 
 app.get("/test", (req, res) => {
   res.status(201).json({ message: "Application is Running." });
@@ -125,5 +128,5 @@ io.on("connection", (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
