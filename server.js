@@ -121,6 +121,7 @@ io.on("connection", (socket) => {
   io.emit("user count", io.engine.clientsCount);
   socket.on("chat message", (msg) => {
     io.emit("chat message", msg);
+    console.log(msg[username]);
   });
 
   socket.on("disconnect", () => {

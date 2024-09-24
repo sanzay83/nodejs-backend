@@ -127,6 +127,27 @@ router.delete("/vio/posts/:id", async (req, res) => {
   }
 });
 
+router.post("/vio/messages", async (req, res) => {
+  const { username, message } = req.body;
+  try {
+    await promisePool.execute(
+      "INSERT INTO messages (username, message) VALUES (?, ?)",
+      [username, message]
+    );
+  } catch (err) {
+    res.status(500).json({ message: "Database error" });
+  }
+});
+
+router.get("/vio/messages", async (req, res) => {
+  try {
+    const [rows] = await promisePool.execute("SELECT * FROM messages");
+    res.status(201).json(rows);
+  } catch (err) {
+    res.status(500).json({ message: "Database error" });
+  }
+});
+
 router.post("/vio/posts/reaction", async (req, res) => {
   const { postid, user, postuser, reaction } = req.body;
   const newReaction = reaction + 1;
